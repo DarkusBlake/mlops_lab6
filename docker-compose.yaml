@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  db:
+    image: postgres:15-alpine
+    container_name: wine_db
+    environment:
+      POSTGRES_DB: wine_predictions
+      POSTGRES_USER: wine_user
+      POSTGRES_PASSWORD: wine_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wine-network
+    restart: unless-stopped
+
+  # FastAPI приложение
+  api:
+    build: .
+    container_name: wine_api
+    ports:
+      - "8005:8005"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=wine_predictions
+      - DB_USER=wine_user
+      - DB_PASSWORD=wine_password
+    depends_on:
+      - db
+    volumes:
+      - ./models:/app/models
+    networks:
+      - wine-network
+    restart: unless-stopped
+
+networks:
+  wine-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
